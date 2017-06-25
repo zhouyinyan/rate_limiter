@@ -192,29 +192,37 @@ public class LimiterFactory implements InitializingBean {
     private double checkAndReturnRate(String className, String methodName,  Limit limit) {
         double maxRate = 200.0d; //默认200,理论上配置错误会抛出异常，兜底配置
 
+        String withClassMethodMsg = "在类[" + className+ "]中，" + ( StringUtils.isBlank(methodName) ? "" : "在方法[" + methodName + "]中" );
+
         //配置合法性校验
         if(limit.withConfigCenter()){
 
             //没有配置ConfigCenterClient
             if(!withConfigCenterClient.get()){
-                throw new InitLimiterException("使用了配置中心的注解，但spring容器中无ConfigCenterClient类型，在类" + className+ "中");
+                throw new InitLimiterException(withClassMethodMsg + "使用了配置中心的注解，但spring容器中无ConfigCenterClient类型的Bean");
             }
 
             //配置在配置中心
             if(StringUtils.isBlank(limit.configCenterKey())){
-                throw new InitLimiterException("配置中心的key必须配置，在类" + className+ "中");
+                throw new InitLimiterException(withClassMethodMsg + "使用了配置中心的注解, configCenterKey必须配置");
             }
 
-            maxRate = getMaxRateFromConfigCenter( limit.configCenterKey());
+            try {
+                maxRate = getMaxRateFromConfigCenter( limit.configCenterKey());
+            }catch (NumberFormatException e){
+                throw new InitLimiterException(withClassMethodMsg + "使用了配置中心的注解, 配置中心的value必须配置为数字，配置key:" + limit.configCenterKey());
+            }catch (NullPointerException e){
+                throw new InitLimiterException(withClassMethodMsg + "使用了配置中心的注解, 配置中心的value不能配置为空，配置key:" + limit.configCenterKey());
+            }
 
             if (maxRate <= MIN_RATE) {
-                throw new InitLimiterException("配置中心的最小速率限制不能小于" + MIN_RATE + "，在类" + className + "中");
+                throw new InitLimiterException(withClassMethodMsg + "使用了配置中心的注解, 配置中心配置的速率限制不能小于" + MIN_RATE);
             }
 
         }else {
             //注解配置
             if (limit.maxRate() <= MIN_RATE) {
-                throw new InitLimiterException("最小速率限制不能小于" + MIN_RATE + "，在类" + className + "中");
+                throw new InitLimiterException(withClassMethodMsg +"使用了注解配置, 配置的速率限制不能小于" + MIN_RATE);
             }
 
             maxRate = limit.maxRate();
@@ -230,20 +238,11 @@ public class LimiterFactory implements InitializingBean {
      */
     private double getMaxRateFromConfigCenter(String configKey) {
         String configValue = configCenterClient.getValueByKey(configKey);
-        try {
-            return Double.valueOf(configValue);
-        }catch (NumberFormatException e){
-            throw new InitLimiterException("配置中心的value必须配置为数字，配置key:" + configKey);
-        }catch (NullPointerException e){
-            throw new InitLimiterException("配置中心的value必须不能配置为空，配置key:" + configKey);
-        }
+        return Double.valueOf(configValue);
     }
 
-
-
-
     @PreDestroy
-    public void destory(){
+    public void destroy(){
         limiterMap.clear();
     }
 
