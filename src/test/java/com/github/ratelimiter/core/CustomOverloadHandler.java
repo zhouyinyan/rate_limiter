@@ -1,8 +1,7 @@
-package com.rate.limiter.core;
+package com.github.ratelimiter.core;
 
-import com.rate.limiter.handler.OverloadHandler;
+import com.github.ratelimiter.handler.OverloadHandler;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

@@ -1,8 +1,7 @@
-package com.rate.limiter.core;
+package com.github.ratelimiter.core;
 
 import com.google.common.collect.Maps;
-import com.rate.limiter.configcenter.ConfigCenterClient;
-import org.springframework.stereotype.Component;
+import com.github.ratelimiter.configcenter.ConfigCenterClient;
 
 import java.util.Map;
 

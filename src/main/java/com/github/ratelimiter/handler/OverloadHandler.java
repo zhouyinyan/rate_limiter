@@ -1,4 +1,4 @@
-package com.rate.limiter.handler;
+package com.github.ratelimiter.handler;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 

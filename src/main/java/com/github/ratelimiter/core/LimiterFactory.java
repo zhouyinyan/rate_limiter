@@ -1,11 +1,11 @@
-package com.rate.limiter.core;
+package com.github.ratelimiter.core;
 
+import com.github.ratelimiter.configcenter.ConfigCenterClient;
+import com.github.ratelimiter.handler.OverloadHandler;
+import com.github.ratelimiter.handler.SysDefaultOverloadHandler;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.RateLimiter;
-import com.rate.limiter.configcenter.ConfigCenterClient;
-import com.rate.limiter.core.exceptions.InitLimiterException;
-import com.rate.limiter.handler.SysDefaultOverloadHandler;
-import com.rate.limiter.handler.OverloadHandler;
+import com.github.ratelimiter.core.exceptions.InitLimiterException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;

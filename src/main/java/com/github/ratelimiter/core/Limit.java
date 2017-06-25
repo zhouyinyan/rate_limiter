@@ -1,6 +1,6 @@
-package com.rate.limiter.core;
+package com.github.ratelimiter.core;
 
-import com.rate.limiter.handler.SysDefaultOverloadHandler;
+import com.github.ratelimiter.handler.SysDefaultOverloadHandler;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

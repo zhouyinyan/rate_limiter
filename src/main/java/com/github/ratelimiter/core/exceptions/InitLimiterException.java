@@ -1,4 +1,4 @@
-package com.rate.limiter.core.exceptions;
+package com.github.ratelimiter.core.exceptions;
 
 /**
  * Created by Administrator on 2015/8/10.

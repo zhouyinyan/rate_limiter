@@ -1,4 +1,4 @@
-package com.rate.limiter.core;
+package com.github.ratelimiter.core;
 
 import com.google.common.util.concurrent.RateLimiter;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -23,7 +23,7 @@ public class LimitAspect implements Ordered{
     @Autowired
     LimiterFactory limiterFactory;
 
-    @Pointcut("@annotation(com.rate.limiter.core.Limit)")
+    @Pointcut("@annotation(com.github.ratelimiter.core.Limit)")
     public void limitPointCut(){}
 
     @Around("limitPointCut()")

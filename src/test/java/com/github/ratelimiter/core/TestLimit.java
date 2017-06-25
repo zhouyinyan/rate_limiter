@@ -1,4 +1,4 @@
-package com.rate.limiter.core;
+package com.github.ratelimiter.core;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

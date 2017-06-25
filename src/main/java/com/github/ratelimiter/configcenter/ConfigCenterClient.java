@@ -1,4 +1,4 @@
-package com.rate.limiter.configcenter;
+package com.github.ratelimiter.configcenter;
 
 /**
  * 配置中心客户端
