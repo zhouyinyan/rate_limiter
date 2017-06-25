@@ -7,6 +7,7 @@ import com.rate.limiter.core.exceptions.InitLimiterException;
 import com.rate.limiter.handler.SysDefaultOverloadHandler;
 import com.rate.limiter.handler.OverloadHandler;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PreDestroy;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by zhouyinyan on 17/3/2.
@@ -67,6 +69,12 @@ public class LimiterFactory implements InitializingBean {
     ConfigCenterClient configCenterClient;
 
     /**
+     * 是否使用配置中心
+     */
+    AtomicBoolean withConfigCenterClient = new AtomicBoolean(false);
+
+
+    /**
      * 扫描spring容器中的所有bean，
      *      如果类级别有limit注解，这注册类级别共享的ratelimiter；
      *      如果方法级别有limit注解，则注册方法级别独享的retelimiter；
@@ -78,6 +86,15 @@ public class LimiterFactory implements InitializingBean {
      */
     @Override
     public void afterPropertiesSet() throws InitLimiterException {
+        //是否配置了ConfigCenterClient 的spring bean
+        try {
+            context.getBean(ConfigCenterClient.class);
+            withConfigCenterClient.set(true);
+        } catch (BeansException e) {
+            withConfigCenterClient.set(false);
+        }
+
+
         Map<String, Object> allSpringBean =  context.getBeansOfType(Object.class);
 
         for(Map.Entry<String, Object> entry : allSpringBean.entrySet()){
@@ -177,6 +194,12 @@ public class LimiterFactory implements InitializingBean {
 
         //配置合法性校验
         if(limit.withConfigCenter()){
+
+            //没有配置ConfigCenterClient
+            if(!withConfigCenterClient.get()){
+                throw new InitLimiterException("使用了配置中心的注解，但spring容器中无ConfigCenterClient类型，在类" + className+ "中");
+            }
+
             //配置在配置中心
             if(StringUtils.isBlank(limit.configCenterKey())){
                 throw new InitLimiterException("配置中心的key必须配置，在类" + className+ "中");

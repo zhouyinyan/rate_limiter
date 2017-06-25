@@ -4,14 +4,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * 系统默认限流处理器，兜底限流处理。
  * 	建议用户实现自己的处理器，而不是直接使用系统默认的。
  * Created by zhouyinyan
  */
-@Component("SysDefaultOverloadHandler")
 public class SysDefaultOverloadHandler implements OverloadHandler {
 
     public static final String LIMIT_ERROR_CODE = "OVERLOAD_ERROR";

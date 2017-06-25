@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Created by zhouyinyan on 17/6/25.
  */
-@Component
+//@Component
 public class TestConfigCenterClient implements ConfigCenterClient {
 
     //data for test

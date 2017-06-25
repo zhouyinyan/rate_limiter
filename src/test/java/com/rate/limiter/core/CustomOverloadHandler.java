@@ -16,10 +16,6 @@ public class CustomOverloadHandler implements OverloadHandler {
 
     Logger logger = LoggerFactory.getLogger(getClass().getName());
 
-    /**
-     * 系统默认处理器实现,仅仅打印错误日志。
-     * @param joinPoint
-     */
     @Override
     public Object handle(ProceedingJoinPoint joinPoint) {
         logger.error(Thread.currentThread().getName() + " : OVERLOAD_ERROR IN CLASS: " + joinPoint.getThis().getClass().getName());
