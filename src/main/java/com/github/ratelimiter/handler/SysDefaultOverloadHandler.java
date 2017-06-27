@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
  */
 public class SysDefaultOverloadHandler implements OverloadHandler {
 
-    public static final String LIMIT_ERROR_CODE = "OVERLOAD_ERROR";
-
     Logger logger = LoggerFactory.getLogger(getClass().getName());
 
     /**

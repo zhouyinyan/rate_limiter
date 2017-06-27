@@ -11,5 +11,12 @@ public interface ConfigCenterClient {
      * @param configCenterKey 配置中心key
      * @return 配置值
      */
-    String getValueByKey(String configCenterKey);
+    String getValue(String configCenterKey);
+
+    /**
+     * 配置中心配置变更后，配置动态更新
+     * @param configCenterKey 配置中心key
+     * @return 配置值
+     */
+    void updateValue(String configCenterKey, String newValue);
 }

@@ -4,6 +4,7 @@ import com.github.ratelimiter.configcenter.ConfigCenterClient;
 import com.github.ratelimiter.handler.OverloadHandler;
 import com.github.ratelimiter.handler.SysDefaultOverloadHandler;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import com.github.ratelimiter.core.exceptions.InitLimiterException;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PreDestroy;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -65,6 +67,8 @@ public class LimiterFactory implements InitializingBean {
     @Autowired
     ApplicationContext context;
 
+
+
     @Autowired(required = false)
     ConfigCenterClient configCenterClient;
 
@@ -72,6 +76,13 @@ public class LimiterFactory implements InitializingBean {
      * 是否使用配置中心
      */
     AtomicBoolean withConfigCenterClient = new AtomicBoolean(false);
+
+
+    /**
+     * 配置中心key->限流器名称列表 map
+     *      value设计为Set的原因是：不同的limit注解可以复用配置中心单一配置
+     */
+    private Map<String, Set<String>> configCenterKeyToLimiterNameMap = Maps.newConcurrentMap();
 
 
     /**
@@ -104,10 +115,12 @@ public class LimiterFactory implements InitializingBean {
             //类级别
             if(null != classLimit) {
 
-                double maxRate = checkAndReturnRate(entry.getKey(),null,  classLimit);
+                String limiterName = beanClass.getName();
+
+                double maxRate = checkAndReturnRate(entry.getKey(),null,  classLimit, limiterName);
                 //注册类级别共享limiter
                 RateLimiter limiter = RateLimiter.create(maxRate);
-                limiterMap.put(beanClass.getName(), limiter);
+                limiterMap.put(limiterName, limiter);
 
                 //注册类级别overloadHandler
                 Class clazz = classLimit.overloadHandler();
@@ -127,10 +140,12 @@ public class LimiterFactory implements InitializingBean {
                 Limit methodLimit = AnnotationUtils.findAnnotation(method, Limit.class);
                 if(null != methodLimit) {
 
-                    double maxRate = checkAndReturnRate(entry.getKey(), method.getName(), methodLimit);
+                    String limiterName = beanClass.getName() + method.getName();
 
+                    double maxRate = checkAndReturnRate(entry.getKey(), method.getName(), methodLimit, limiterName);
+                    //注册方法级别limiter
                     RateLimiter methodLimiter = RateLimiter.create(maxRate);
-                    limiterMap.put(beanClass.getName() + method.getName(), methodLimiter);
+                    limiterMap.put(limiterName, methodLimiter);
 
                     //注册方法级别overloadHandler
                     Class clazz = methodLimit.overloadHandler();
@@ -187,9 +202,10 @@ public class LimiterFactory implements InitializingBean {
      * @param className
      * @param methodName
      * @param limit
+     * @param limiterName
      * @return
      */
-    private double checkAndReturnRate(String className, String methodName,  Limit limit) {
+    private double checkAndReturnRate(String className, String methodName, Limit limit, String limiterName) {
         double maxRate = 200.0d; //默认200,理论上配置错误会抛出异常，兜底配置
 
         String withClassMethodMsg = "在类[" + className+ "]中，" + ( StringUtils.isBlank(methodName) ? "" : "在方法[" + methodName + "]中" );
@@ -219,6 +235,16 @@ public class LimiterFactory implements InitializingBean {
                 throw new InitLimiterException(withClassMethodMsg + "使用了配置中心的注解, 配置中心配置的速率限制不能小于" + MIN_RATE);
             }
 
+            //注册配置中心key 到 限流器名称的对应关系
+            Set<String> limiterNameSet = configCenterKeyToLimiterNameMap.get(limit.configCenterKey());
+            if(null == limiterNameSet){
+                limiterNameSet = Sets.newConcurrentHashSet();
+                limiterNameSet.add(limiterName);
+                configCenterKeyToLimiterNameMap.put(limit.configCenterKey(), limiterNameSet);
+            }else{
+                limiterNameSet.add(limiterName);
+            }
+
         }else {
             //注解配置
             if (limit.maxRate() <= MIN_RATE) {
@@ -226,9 +252,33 @@ public class LimiterFactory implements InitializingBean {
             }
 
             maxRate = limit.maxRate();
-        }
 
+        }
         return maxRate;
+    }
+
+
+
+    /**
+     * 遍历更新每个限流器实例
+     * @param limiterNameSet
+     * @param newValue
+     */
+    public void updateLimiterByLimiterNameSet(Set<String> limiterNameSet, double newValue) {
+        for (String limiterName : limiterNameSet){
+            updateLimiterByLimiterName(limiterName, newValue);
+        }
+    }
+
+    /**
+     * 更新单个限流器实例
+     * @param limiterName
+     * @param newValue
+     */
+    public void updateLimiterByLimiterName(String limiterName, double newValue) {
+        if(limiterMap.containsKey(limiterName)){
+            limiterMap.get(limiterName).setRate(newValue);
+        }
     }
 
     /**
@@ -237,8 +287,12 @@ public class LimiterFactory implements InitializingBean {
      * @return
      */
     private double getMaxRateFromConfigCenter(String configKey) {
-        String configValue = configCenterClient.getValueByKey(configKey);
+        String configValue = configCenterClient.getValue(configKey);
         return Double.valueOf(configValue);
+    }
+
+    public Map<String, Set<String>> getConfigCenterKeyToLimiterNameMap() {
+        return configCenterKeyToLimiterNameMap;
     }
 
     @PreDestroy

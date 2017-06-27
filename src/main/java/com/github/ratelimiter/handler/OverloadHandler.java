@@ -7,6 +7,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
  */
 public interface OverloadHandler {
 
+	String LIMIT_ERROR_CODE = "OVERLOAD_ERROR";
+
 	Object handle(ProceedingJoinPoint joinPoint);
 
 }

@@ -1,5 +1,6 @@
 package com.github.ratelimiter.core;
 
+import com.github.ratelimiter.configcenter.ConfigCenterClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,6 +143,50 @@ public class TestLimit {
         TimeUnit.SECONDS.sleep(6);
     }
 
+
+
+    @Test
+    public void testConcurrentScene6() throws InterruptedException {
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        int num = 10;
+        for (int i = 0; i < num; ++i) {
+            final int finalI = i;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        latch.await();
+                        TimeUnit.MILLISECONDS.sleep(100 * finalI);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    demoService.scene6();
+                }
+            }, "thead:" + i).start();
+        }
+
+        latch.countDown();
+
+        TimeUnit.SECONDS.sleep(6);
+    }
+
+
+    @Autowired
+    ConfigCenterClient configCenterClient;
+
+    @Test
+    public void testConcurrentScene7() throws InterruptedException {
+
+        testConcurrentScene6();
+
+        configCenterClient.updateValue(TestConfigCenterClient.K2, "3");
+
+        testConcurrentScene6();
+
+    }
 
     //异常测试
 }
